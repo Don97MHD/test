@@ -1,0 +1,71 @@
+role sender(A, B: agent,
+            SND, RCV: channel(dy),
+            Hash: hash_func,
+            EcgA: text)
+played_by A
+{
+    var K, EK, H, C: text
+    local State: nat
+    init State := 0
+    transition
+    1. State = 0 ==>
+        new K
+        H := Hash(K)
+        EK := rsencode(K)
+        C := xor(EcgA, EK)
+        SND(A, B, C, H)
+        State := 1
+        witness(A, B, bob_authenticates_alice, H)
+        secret(K, sec_k, {A, B})
+}
+
+role receiver(A, B: agent,
+              SND, RCV: channel(dy),
+              Hash: hash_func,
+              EcgB: text)
+played_by B
+{
+    var K_p, EK_p, H_p, C_p: text
+    local State: nat
+    init State := 0
+    transition
+    1. State = 0 =|>
+        RCV(A, B, C_p, H_p)
+        EK_p := xor(C_p, EcgB)
+        K_p := rsdecode(EK_p)
+        if H_p = Hash(K_p) then
+            State := 1
+            request(B, A, bob_authenticates_alice, H_p)
+        else
+            State := 2
+}
+
+role session(A, B: agent, EcgA, EcgB: text, Hash: hash_func)
+{
+    var chan1, chan2: channel(dy)
+    play_role(sender, A, B, chan1, chan2, Hash, EcgA)
+    play_role(receiver, A, B, chan1, chan2, Hash, EcgB)
+}
+
+goal
+    secrecy_of sec_k
+    authentication_on bob_authenticates_alice
+end_goal
+
+environment()
+{
+    const   alice, bob, eve: agent
+    const   hash: hash_func
+    const   ecg_a, ecg_b: text
+    const   bob_authenticates_alice: protocol_id
+
+    untyped_function rsencode(text): text
+    untyped_function rsdecode(text): text
+    inverse_functions(rsencode, rsdecode)
+
+    intruder_knowledge = { eve, hash, ecg_a, ecg_b }
+
+    composition
+        session(alice, bob, ecg_a, ecg_b, hash)
+        session(alice, eve, ecg_a, ecg_b, hash)
+}
