@@ -1,0 +1,15 @@
+# .gitpod.yml
+
+# تحديد أن Gitpod يجب أن يبني بيئة العمل باستخدام ملف Dockerfile المخصص
+image:
+  file: .gitpod.Dockerfile
+
+# إعداد المهام
+tasks:
+  - name: 'AVISPA Environment'
+    # هذا الأمر سيطبع لك رسالة إرشادية فقط عند فتح الطرفية
+    command: |
+      echo "Welcome to the AVISPA environment!"
+      echo "The AVISPA tool is installed and ready to use."
+      echo "To verify your protocol, run the following command in the terminal:"
+      echo "avispa-tool.sh protocol.hlpsl"
